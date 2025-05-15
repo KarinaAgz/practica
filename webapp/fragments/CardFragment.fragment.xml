@@ -1,0 +1,36 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:cards="sap.f.cards"
+    xmlns:core="sap.ui.core"
+>
+    <Popover
+        placement="Right"
+        showHeader="false"
+        contentWidth="300px"
+    >
+        <f:Card width="300px">
+            <f:header>
+                <cards:Header
+                    title="{ProductName}"
+                    subtitle="{i18n>productDetails}"
+                />
+            </f:header>
+            <f:content>
+                <VBox class="sapUiSmallMargin">
+                    <Label text="{i18n>productId} : {ProductID}" />
+                    <Label
+                        text="{i18n>unitPrice} : {path :'UnitPrice', formatter:'.formatter.formatCurrency'}"
+                    />
+                    <Label text="{i18n>unitsInStock} : {UnitsInStock}" />
+                    <Label text="{i18n>category} : {Category/CategoryName}" />
+                    <Label text="{i18n>supplier} : {Supplier/CompanyName}" />
+                    <ObjectStatus
+                        text="{path: 'UnitsInStock', formatter: '.formatStockStatus'}"
+                        state="{path:'UnitsInStock', formatter:'.formatStockStatusState'}"
+                    />
+                </VBox>
+            </f:content>
+        </f:Card>
+    </Popover>
+</core:FragmentDefinition>

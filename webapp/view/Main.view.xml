@@ -1,0 +1,156 @@
+<mvc:View controllerName="logaligroup.practica2.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:m="sap.m"
+    xmlns:u="sap.ui.unified"
+    xmlns:f="sap.f"
+    xmlns:core="sap.ui.core"
+    xmlns:table="sap.ui.table"
+    xmlns:layout="sap.ui.layout"
+    height="100%">
+    
+    <f:DynamicPage id="dynamicPageId" preserveHeaderStateOnScroll="true" headerExpanded="{ui>/headerExpanded}" showFooter="true" fitContent="true">
+        <f:title>
+            <f:DynamicPageTitle >
+                <f:heading>
+                    <m:Title text="{i18n>appTitle}"/>
+                </f:heading>
+                    <f:expandedContent>
+
+                        <m:Label text="{i18n>appSubtitle}"/>
+                    </f:expandedContent>
+                    <f:snappedContent>
+                        <m:Label text="{i18n>appSubtitle}"/>
+                    </f:snappedContent>
+
+                    <f:actions>
+                        <m:ToolbarSpacer />
+                        <m:Button text="{i18n>editButton}" type= "Emphasized" press="onEditPress"/>
+                        <m:Button text="{i18n>deleteButton}" type= "Transparent" press="onDeletePress"/>
+                        <m:Button icon="sap-icon://action" type= "Transparent" press="onSharePress"/>
+
+                    </f:actions>
+            </f:DynamicPageTitle>
+        </f:title>
+        <f:header>
+            <f:DynamicPageHeader pinnable="true">
+                <m:FlexBox alignItems="Start" justifyContent="SpaceBetween" wrap="Wrap">
+                    <m:items>
+                        <m:Panel  class="sapUiNoContentPadding">
+                            <m:content>
+
+                                <layout:HorizontalLayout allowWrapping="true" class="sapUiMediumMargin">
+                                    <layout:VerticalLayout class="sapUiMediumMarginEnd">
+                                        <m:Label text="{i18n>filterProductName}" labelFor="filterProductName"/>
+                                        <m:Input id="filterProductName" value="{ui>/filters/productName}" change="onFilterChange" width="15rem"/>
+                                    </layout:VerticalLayout>
+                                    
+                                    <layout:VerticalLayout class="sapUiMediumMarginEnd">
+                                        <m:Label text="{i18n>filterCategory}" labelFor="filterCategory"/>
+                                        <m:Select id="filterCategory" selectedKey="{ui>/filters/category}" items="{ path:'/Categories', sorter:{path:'CategoryName'} }" change="onFilterChange" width="15rem">
+                                            <core:Item text="{CategoryName}" key="{CategoryID}"/>
+                                        </m:Select>                                   
+                                     </layout:VerticalLayout>
+                                    
+                                    <layout:VerticalLayout class="sapUiMediumMarginEnd">
+                                        <m:Label text="{i18n>filterSupplier}" labelFor="filterSupplier"/>
+                                        <m:Select id="filterSupplier" selectedKey="{ui>filteers/supplier}" items="{path:'/Suppliers', sorter:{path :'CompanyName'}}" change="onFilterChange" width="15rem">
+                                            <core:Item text="{CompanyName}" key="{SupplierID}"/>
+                                        </m:Select>
+                                    </layout:VerticalLayout>
+
+                                    <layout:VerticalLayout >
+                                        <m:Label text="{i18n>filterStockStatus}" labelFor="filterStockStatus"/>
+                                        <m:RadioButtonGroup id="filterStockStatus" selectedIndex="{= ${ui>/filters/stockStatus} ==='InStock' ? 0 :${ui>/filters/stockStatus}=== 'LowStock' ? 1: ${ui>/filters/stockStatus} === 'OutOfStock' ? 2: -1}" select="onStockStatusSelect">
+                                            <m:buttons>
+                                                <m:RadioButton text="{i18n>stockInStock}"/>
+                                                <m:RadioButton text="{i18n>stockLowStock}"/>
+                                                <m:RadioButton text="{i18n>stockOutOfStock}"/>
+                                            </m:buttons>
+                                        </m:RadioButtonGroup>
+                                    </layout:VerticalLayout>
+                                </layout:HorizontalLayout>
+                            </m:content>
+                        </m:Panel>
+                    </m:items>
+                </m:FlexBox>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <f:content>
+            <table:Table id="productTable" rows="{ path: '/Products', parameters:{expand: 'Category , Supplier'} }" selectionMode="MultiToggle" rowMode="Auto" filter="onFilterTable">
+                <table:extension>
+                   <m:OverflowToolbar style="Clear">
+                        <m:Title text="{i18n>productsTitle}"/>
+                        <m:ToolbarSpacer />
+                        <m:Button icon="sap-icon://filter" press="onClearFilters" tooltip="{i18n>clearFilters}"/>
+                   </m:OverflowToolbar>
+                </table:extension>
+                <table:columns>
+                    <table:Column width="12rem">
+                        <m:Label text="{i18n>productName}"/>
+                        <table:template>
+                            <m:Text text="{ProductName}" wrapping="false"/>
+                        </table:template>
+                    </table:Column>
+                    <table:Column width="8rem">
+                        <m:Label text="{i18n>productId}"/>
+                        <table:template>
+                            <m:Text text="{ProductID}"/>
+                        </table:template>
+                    </table:Column>
+
+                    <table:Column width="9rem">
+                        <m:Label text="{i18n>unitPrice}"/>
+                        <table:template>
+                            <u:Currency   value="{path:'UnitPrice', formatter:'.formatPrice'}" currency="USD"/>
+                        </table:template>
+                    </table:Column>
+
+                    <table:Column width="8rem" hAlign="End">
+                        <m:Label text="{i18n>unitsInStock}"/>
+                        <table:template>
+                            <m:Text text="{UnitsInStock}"/>
+                        </table:template>
+                    </table:Column>
+                    <table:Column width="10rem">
+                        <m:Label text="{i18n>stockStatus}"/>
+                        <table:template>
+                            <m:ObjectStatus text="{path:'UnitsInStock', formatter:'.formatStockStatus'}"
+                                            state="{path:'UnitsInStock', formatter: '.formatStockStatusStates'}"/>
+    
+                        </table:template>
+                    </table:Column>
+                    <table:Column width="12rem">
+                        <m:Label text="{i18n>category}"/>
+                        <table:template>
+                            <m:Text text="{Category/CategoryName}"/>
+                        </table:template>
+                    </table:Column>
+
+                    <table:Column  width="12rem">
+                        <m:Label text="{i18n>supplier}"/>
+                        <table:template>
+                            <m:Text text="{Supplier/CompanyName}"/>
+                        </table:template>
+                    </table:Column>
+
+                    <table:Column width="9rem">
+                        <m:Label text="{i18n>details}"/>
+                        <table:template>
+                            <m:Button text="{i18n>showDetails}" press="onDetailsPress"/>
+                            <m:Button type="Accept" text="{i18n>accept}" press="onAccept"/>
+                            <m:Button type="Reject" text="{i18n>reject}" press="onReject"/>
+
+                        </table:template>
+                    </table:Column>
+                </table:columns>
+            </table:Table>
+        </f:content>
+        <f:footer>
+            <m:OverflowToolbar>
+                <m:ToolbarSpacer/>
+                <m:Button type="Accept" text="{i18n>accept}" press="onAccept"/>
+            </m:OverflowToolbar>
+        </f:footer>
+    </f:DynamicPage>
+</mvc:View>
