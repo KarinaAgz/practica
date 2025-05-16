@@ -53,7 +53,7 @@
                                     
                                     <layout:VerticalLayout class="sapUiMediumMarginEnd">
                                         <m:Label text="{i18n>filterSupplier}" labelFor="filterSupplier"/>
-                                        <m:Select id="filterSupplier" selectedKey="{ui>filteers/supplier}" items="{path:'/Suppliers', sorter:{path :'CompanyName'}}" change="onFilterChange" width="15rem">
+                                        <m:Select id="filterSupplier" selectedKey="{ui>filters/supplier}" items="{path:'/Suppliers', sorter:{path :'CompanyName'}}" change="onFilterChange" width="15rem">
                                             <core:Item text="{CompanyName}" key="{SupplierID}"/>
                                         </m:Select>
                                     </layout:VerticalLayout>

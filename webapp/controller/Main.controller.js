@@ -61,7 +61,31 @@ sap.ui.define([
         },
 
         //Handle filter input change 
-        onFilteerChange: function (oEvent) {
+        onFilterChange: function (oEvent) {
+            var v = this.getView();
+            var oUiModel=v.getModel("ui");
+            if(!oUiModel){
+                sap.m.MessageToast.show("UI model not found. Please refresh the application");
+                return;
+            }
+            clearTimeout(this._filterTimeout);
+            this._filterTimeout=setTimeout(function (){
+                var oBinding=v.byId("productTable").getBinding("rows");
+                oBinding.filter(this._getFilters());
+                oBinding.refresh(true);
+                oBinding.attachEventOnce("dataReceived" , function(oEvent){
+                    var oBinding=v.byId("productTable").getBinding("rows");
+                    oBinding.filter(this._getFilters());
+                    oBinding.refresh(true);
+                    oBinding.refresh(true);
+                    oBinding.attachEventOnce("dataReceived", function(oEvent){
+                        var iCount=oEvent.getParameter("data") ?.results?.length || 0;
+                        if(iCount === 0){
+                            sap.m.MessageToast.show("No products match the selected filters");
+                        }
+                    });
+                }.bind(this),300);
+            })
             this.getView().byId("productTable").getBinding("rows").filter(this._getFilters());
         },
 
@@ -86,7 +110,7 @@ sap.ui.define([
             }
             //Category filter
             if (oFilters.category) {
-                aFilters.push(new Filter("categoryID", FilterOperator.EQ, oFilters.category));
+                aFilters.push(new Filter("CategoryID", FilterOperator.EQ, oFilters.category));
 
             }
             if (oFilters.supplier) {
