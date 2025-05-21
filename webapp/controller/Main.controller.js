@@ -1,10 +1,15 @@
+//formatter.formatCurrency
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/model/Filter",
-    "sap/ui/model/FilterOperator",
+    "sap/ui/model/FilterOperator",  
+    
     "sap/m/MessageToast",
-    "sap/ui/core/Fragment"
-], (Controller, Filter, FilterOperator, MessageToast, Fragment) => {
+    "sap/ui/core/Fragment",
+    "sap/m/Dialog",
+    "sap/m/Input",
+    "sap/m/Button"
+], (Controller, Filter, FilterOperator, MessageToast, Fragment,Dialog,Input,Button) => {
     "use strict";
 
     return Controller.extend("logaligroup.practica2.controller.Main", {
@@ -12,7 +17,7 @@ sap.ui.define([
             var v = this.getView();
             var oUiModel = this.getOwnerComponent().getModel("ui");
             if (!oUiModel) {
-                //Falback:create a new json model if not defined
+                //create a new json model if not defined
                 oUiModel = new sap.ui.model.json.JSONModel({
                     headerExpaanded: true,
                     filters: {
@@ -43,14 +48,18 @@ sap.ui.define([
                 return "Error";
             } else if (iUnitsInStock < 20) {
                 return "Warning";
+            }else if(iUnitsInStock >0){
+                return "Success";
+
             }
-            return "Success";
+            return "None";
         },
 
         //formatter for price (converts string to float)
         formatPrice: function (sPrice) {
             return parseFloat(sPrice) || 0;
         },
+
 
         //formaatter for currency display
         formatter: {
@@ -63,29 +72,29 @@ sap.ui.define([
         //Handle filter input change 
         onFilterChange: function (oEvent) {
             var v = this.getView();
-            var oUiModel=v.getModel("ui");
-            if(!oUiModel){
+            var oUiModel = v.getModel("ui");
+            if (!oUiModel) {
                 sap.m.MessageToast.show("UI model not found. Please refresh the application");
                 return;
             }
             clearTimeout(this._filterTimeout);
-            this._filterTimeout=setTimeout(function (){
-                var oBinding=v.byId("productTable").getBinding("rows");
+            this._filterTimeout = setTimeout(() => {
+                var oBinding = v.byId("productTable").getBinding("rows");
                 oBinding.filter(this._getFilters());
                 oBinding.refresh(true);
-                oBinding.attachEventOnce("dataReceived" , function(oEvent){
-                    var oBinding=v.byId("productTable").getBinding("rows");
+                oBinding.attachEventOnce("dataReceived", (oEvent) => {
+                    var oBinding = v.byId("productTable").getBinding("rows");
                     oBinding.filter(this._getFilters());
                     oBinding.refresh(true);
                     oBinding.refresh(true);
-                    oBinding.attachEventOnce("dataReceived", function(oEvent){
-                        var iCount=oEvent.getParameter("data") ?.results?.length || 0;
-                        if(iCount === 0){
+                    oBinding.attachEventOnce("dataReceived", (oEvent) => {
+                        var iCount = oEvent.getParameter("data")?.results?.length || 0;
+                        if (iCount === 0) {
                             sap.m.MessageToast.show("No products match the selected filters");
                         }
                     });
-                }.bind(this),300);
-            })
+                }, 300);
+            }, 300);
             this.getView().byId("productTable").getBinding("rows").filter(this._getFilters());
         },
 
@@ -145,7 +154,7 @@ sap.ui.define([
                     stockStatus: ""
                 }
             });
-            v.byId("ProductTable").getBinding("rows").filter([]);
+            v.byId("productTable").getBinding("rows").filter([]);
         },
 
         //Show product details in a popover
@@ -161,8 +170,10 @@ sap.ui.define([
 
                 this._pPopover = Fragment.load({
                     id: v.getId(),
-                    name: "logaligroup.practica2.fragments.CardFrgament",
-                    Controller: this
+                    name: "logaligroup.practica2.fragments.CardFragment",
+                
+                    controller:this
+                   
                 }).then(function (oPopover) {
                     v.addDependent(oPopover);
                     return oPopover;
@@ -174,36 +185,158 @@ sap.ui.define([
             });
 
         },
-        //placeholder for Edit button
         onEditPress: function () {
-            MessageToast.show("Edit functionality not implement yet.");
-        },
-        //palceholder for Share button 
-        onDeletePress: function () {
-            MessageToast.show("Delete functionality not implement yet");
-        },
-
-        //placehplder for Share button
-        onSharePress: function () {
-            MessageToast.show("Share functionality not implemented yet");
-        },
-        //placeholder for Accept button
-        onAccept: function () {
-            MessageToast.show("Accept action triggered");
-        },
-
-        //Placeholder for reject button 
-        onReject: function () {
-            MessageToast.show("Reject action triggered ")
-        },
-
-        formatter: {
-            formatCurrency: function (fValue) {
-                return new sap.ui.model.type.Currency().formatValue([fValue, "USD"], "string");
+            var v = this.getView();
+            var oTable = v.byId("productTable");
+            var aSelectedIndices = oTable.getSelectedIndices();
+            
+            if (aSelectedIndices.length === 0) {
+                MessageToast.show("Por favor, selecciona al menos un producto para editar.");
+                return;
             }
+
+            // Crear un diálogo para editar el precio
+            if (!this._oEditDialog) {
+                this._oEditDialog = new Dialog({
+                    title: "Editar Precio",
+                    content: [
+                        new Input({
+                            id: "editPriceInput",
+                            placeholder: "Nuevo precio (USD)",
+                            type: "Number"
+                        })
+                    ],
+                    beginButton: new Button({
+                        text: "Guardar",
+                        press: () => {
+                            var sNewPrice = sap.ui.getCore().byId("editPriceInput").getValue();
+                            if (!sNewPrice || isNaN(sNewPrice)) {
+                                MessageToast.show("Por favor, ingresa un precio válido.");
+                                return;
+                            }
+                            aSelectedIndices.forEach((iIndex) => {
+                                var oContext = oTable.getContextByIndex(iIndex);
+                                oContext.getModel().setProperty(oContext.getPath() + "/UnitPrice", parseFloat(sNewPrice));
+                            });
+                            oTable.getBinding("rows").refresh(true);
+                            MessageToast.show("Precio actualizado para los productos seleccionados.");
+                            this._oEditDialog.close();
+                        }
+                    }),
+                    endButton: new Button({
+                        text: "Cancelar",
+                        press: () => {
+                            this._oEditDialog.close();
+                        }
+                    })
+                });
+                v.addDependent(this._oEditDialog);
+            }
+            this._oEditDialog.open();
+        },
+
+        onDeletePress: function () {
+            var v = this.getView();
+            var oTable = v.byId("productTable");
+            var aSelectedIndices = oTable.getSelectedIndices();
+
+            if (aSelectedIndices.length === 0) {
+                MessageToast.show("Por favor, selecciona al menos un producto para eliminar.");
+                return;
+            }
+
+            // Crear un diálogo de confirmación
+            if (!this._oDeleteDialog) {
+                this._oDeleteDialog = new Dialog({
+                    title: "Confirmar Eliminación",
+                    content: new Text({
+                        text: "¿Estás seguro de que deseas eliminar los productos seleccionados?"
+                    }),
+                    beginButton: new Button({
+                        text: "Eliminar",
+                        press: () => {
+                            var oModel = oTable.getBinding("rows").getModel();
+                            var aData = oModel.getProperty("/Products");
+                            var aNewData = aData.filter((oItem, iIndex) => !aSelectedIndices.includes(iIndex));
+                            oModel.setProperty("/Products", aNewData);
+                            oTable.clearSelection();
+                            MessageToast.show("Productos eliminados.");
+                            this._oDeleteDialog.close();
+                        }
+                    }),
+                    endButton: new Button({
+                        text: "Cancelar",
+                        press: () => {
+                            this._oDeleteDialog.close();
+                        }
+                    })
+                });
+                v.addDependent(this._oDeleteDialog);
+            }
+            this._oDeleteDialog.open();
+        },
+
+        onSharePress: function () {
+            var v = this.getView();
+            var oTable = v.byId("productTable");
+            var aSelectedIndices = oTable.getSelectedIndices();
+
+            if (aSelectedIndices.length === 0) {
+                MessageToast.show("Por favor, selecciona al menos un producto para compartir.");
+                return;
+            }
+
+            var aSelectedProducts = aSelectedIndices.map(iIndex => {
+                var oContext = oTable.getContextByIndex(iIndex);
+                return oContext.getObject();
+            });
+            var sText = aSelectedProducts.map(oProduct => 
+                `Producto: ${oProduct.ProductName}, Precio: ${oProduct.UnitPrice} USD`
+            ).join("\n");
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(sText).then(() => {
+                    MessageToast.show("Productos copiados al portapapeles.");
+                });
+            } else {
+                MessageToast.show("Función de compartir no soportada en este navegador.");
+            }
+        },
+
+        onAccept: function (oEvent) {
+            var v = this.getView();
+            var oTable = v.byId("productTable");
+            var aSelectedIndices = oTable.getSelectedIndices();
+
+            if (oEvent.getSource().getParent().getMetadata().getName() === "sap.m.OverflowToolbar") {
+                // Acción del botón en el footer
+                if (aSelectedIndices.length === 0) {
+                    MessageToast.show("Por favor, selecciona al menos un producto para aceptar.");
+                    return;
+                }
+                aSelectedIndices.forEach(iIndex => {
+                    var oContext = oTable.getContextByIndex(iIndex);
+                    oContext.getModel().setProperty(oContext.getPath() + "/Status", "Accepted");
+                });
+                oTable.getBinding("rows").refresh(true);
+                MessageToast.show("Productos aceptados.");
+            } else {
+                // Acción del botón en la tabla
+                var oContext = oEvent.getSource().getBindingContext();
+                oContext.getModel().setProperty(oContext.getPath() + "/Status", "Accepted");
+                oTable.getBinding("rows").refresh(true);
+                MessageToast.show(`Producto ${oContext.getProperty("ProductName")} aceptado.`);
+            }
+        },
+
+        onReject: function (oEvent) {
+            var v = this.getView();
+            var oTable = v.byId("productTable");
+            var oContext = oEvent.getSource().getBindingContext();
+            
+            oContext.getModel().setProperty(oContext.getPath() + "/Status", "Rejected");
+            oTable.getBinding("rows").refresh(true);
+            MessageToast.show(`Producto ${oContext.getProperty("ProductName")} rechazado.`);
         }
-
-
-
     });
 });

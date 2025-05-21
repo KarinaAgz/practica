@@ -15,7 +15,6 @@
                     <m:Title text="{i18n>appTitle}"/>
                 </f:heading>
                     <f:expandedContent>
-
                         <m:Label text="{i18n>appSubtitle}"/>
                     </f:expandedContent>
                     <f:snappedContent>
@@ -75,7 +74,6 @@
                 </m:FlexBox>
             </f:DynamicPageHeader>
         </f:header>
-
         <f:content>
             <table:Table id="productTable" rows="{ path: '/Products', parameters:{expand: 'Category , Supplier'} }" selectionMode="MultiToggle" rowMode="Auto" filter="onFilterTable">
                 <table:extension>
@@ -115,7 +113,7 @@
                     <table:Column width="10rem">
                         <m:Label text="{i18n>stockStatus}"/>
                         <table:template>
-                            <m:ObjectStatus text="{path:'UnitsInStock', formatter:'.formatStockStatus'}"
+                            <m:ObjectStatus text="{path:'UnitsInStock', formatter:'formatStockStatus'}"
                                             state="{path:'UnitsInStock', formatter: '.formatStockStatusStates'}"/>
     
                         </table:template>
@@ -137,10 +135,11 @@
                     <table:Column width="9rem">
                         <m:Label text="{i18n>details}"/>
                         <table:template>
-                            <m:Button text="{i18n>showDetails}" press="onDetailsPress"/>
-                            <m:Button type="Accept" text="{i18n>accept}" press="onAccept"/>
-                            <m:Button type="Reject" text="{i18n>reject}" press="onReject"/>
-
+                            <m:HBox>
+                                <m:Button text="{i18n>showDetails}" press="onDetailsPress"/>
+                                <m:Button type="Accept" text="{i18n>accept}" press="onAccept"/>
+                                <m:Button type="Reject" text="{i18n>reject}" press="onReject"/>
+                            </m:HBox>
                         </table:template>
                     </table:Column>
                 </table:columns>
