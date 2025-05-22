@@ -2,14 +2,14 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/model/Filter",
-    "sap/ui/model/FilterOperator",  
-    
+    "sap/ui/model/FilterOperator",
     "sap/m/MessageToast",
     "sap/ui/core/Fragment",
     "sap/m/Dialog",
     "sap/m/Input",
-    "sap/m/Button"
-], (Controller, Filter, FilterOperator, MessageToast, Fragment,Dialog,Input,Button) => {
+    "sap/m/Button",
+    "sap/ui/export/Spreadsheet"
+], (Controller, Filter, FilterOperator, MessageToast, Fragment, Dialog, Input, Button, Spreadsheet) => {
     "use strict";
 
     return Controller.extend("logaligroup.practica2.controller.Main", {
@@ -48,7 +48,7 @@ sap.ui.define([
                 return "Error";
             } else if (iUnitsInStock < 20) {
                 return "Warning";
-            }else if(iUnitsInStock >0){
+            } else if (iUnitsInStock > 0) {
                 return "Success";
 
             }
@@ -60,7 +60,6 @@ sap.ui.define([
             return parseFloat(sPrice) || 0;
         },
 
-
         //formaatter for currency display
         formatter: {
             formatCurrency: function (fValue) {
@@ -68,7 +67,6 @@ sap.ui.define([
 
             }
         },
-
         //Handle filter input change 
         onFilterChange: function (oEvent) {
             var v = this.getView();
@@ -171,9 +169,9 @@ sap.ui.define([
                 this._pPopover = Fragment.load({
                     id: v.getId(),
                     name: "logaligroup.practica2.fragments.CardFragment",
-                
-                    controller:this
-                   
+
+                    controller: this
+
                 }).then(function (oPopover) {
                     v.addDependent(oPopover);
                     return oPopover;
@@ -189,7 +187,7 @@ sap.ui.define([
             var v = this.getView();
             var oTable = v.byId("productTable");
             var aSelectedIndices = oTable.getSelectedIndices();
-            
+
             if (aSelectedIndices.length === 0) {
                 MessageToast.show("Por favor, selecciona al menos un producto para editar.");
                 return;
@@ -290,7 +288,7 @@ sap.ui.define([
                 var oContext = oTable.getContextByIndex(iIndex);
                 return oContext.getObject();
             });
-            var sText = aSelectedProducts.map(oProduct => 
+            var sText = aSelectedProducts.map(oProduct =>
                 `Producto: ${oProduct.ProductName}, Precio: ${oProduct.UnitPrice} USD`
             ).join("\n");
 
@@ -333,10 +331,64 @@ sap.ui.define([
             var v = this.getView();
             var oTable = v.byId("productTable");
             var oContext = oEvent.getSource().getBindingContext();
-            
+
             oContext.getModel().setProperty(oContext.getPath() + "/Status", "Rejected");
             oTable.getBinding("rows").refresh(true);
             MessageToast.show(`Producto ${oContext.getProperty("ProductName")} rechazado.`);
+        },
+        onExportPress: function () {
+            var that = this;
+            var oTable = this.getView().byId("productTable");
+            var oBinding = oTable.getBinding("rows");
+        
+            // Verificar si hay datos para exportar
+            if (!oBinding || oBinding.getLength() === 0) {
+                sap.m.MessageToast.show("No hay datos para exportar.");
+                return;
+            }
+        
+            // Definir las columnas basadas en la tabla
+            var aColumns = oTable.getColumns().map(function (oColumn) {
+                return {
+                    label: oColumn.getLabel().getText(),
+                    property: oColumn.getTemplate().getBindingInfo("text")?.parts[0].path || 
+                             oColumn.getTemplate().getBindingInfo("value")?.parts[0].path
+                };
+            });
+        
+            // Configuración para la exportación
+            var oSettings = {
+                workbook: { columns: aColumns },
+                dataSource: {
+                    type: "OData",
+                    dataUrl: oBinding.getDownloadUrl(), // Incluye filtros aplicados
+                    serviceUrl: oBinding.getModel().sServiceUrl,
+                    headers: oBinding.getModel().getHeaders(),
+                    useBatch: true,
+                    count: oBinding.getLength(),
+                    sizeLimit: 1000
+                },
+                fileName: "Productos_Filtrados_" + new Date().toLocaleDateString() + ".xlsx",
+                worker: false // Desactivado para compatibilidad con entornos locales
+            };
+        
+            // Verificar si sap.ui.export.Spreadsheet está disponible
+            if (typeof sap.ui.export.Spreadsheet !== "function") {
+                sap.m.MessageToast.show("La funcionalidad de exportación no está disponible. Verifica las dependencias.");
+                return;
+            }
+        
+            var oSpreadsheet = new sap.ui.export.Spreadsheet(oSettings);
+            oSpreadsheet.build()
+                .then(function () {
+                    sap.m.MessageToast.show("Exportación a Excel completada");
+                })
+                .catch(function (oError) {
+                    sap.m.MessageToast.show("Error al exportar: " + oError.message);
+                })
+                .finally(function () {
+                    oSpreadsheet.destroy();
+                });
         }
     });
 });

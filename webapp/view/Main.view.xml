@@ -80,6 +80,7 @@
                    <m:OverflowToolbar style="Clear">
                         <m:Title text="{i18n>productsTitle}"/>
                         <m:ToolbarSpacer />
+                        <m:Button icon="sap-icon://excel-attachment" text="{i18n>exportToExcel}" press=".onExportPress" type="Emphasized"/>
                         <m:Button icon="sap-icon://filter" press="onClearFilters" tooltip="{i18n>clearFilters}"/>
                    </m:OverflowToolbar>
                 </table:extension>
